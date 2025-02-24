@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { CalendarIcon, Users, X, Telescope, Lightbulb, RotateCcw } from "lucide-react"
+import { CalendarIcon, Users, X, Telescope, RotateCcw, Sprout, LoaderCircle, TreeDeciduous } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -82,7 +82,7 @@ export function PaperCard({ paper }: PaperCardProps) {
     <>
       <CardHeader>
         <CardTitle className={cn(
-          "text-lg font-semibold",
+          "text-lg font-semibold font-mono",
           isFocused ? "" : "line-clamp-2"
         )}>
           {paper.title}
@@ -103,7 +103,8 @@ export function PaperCard({ paper }: PaperCardProps) {
           <div>
             <p className={cn(
               "text-sm text-muted-foreground",
-              isFocused ? "" : "line-clamp-3"
+              isFocused ? "" : "line-clamp-3",
+              !showingOriginal ? "text-black" : "text-gray-500"
             )}>
               {(showingOriginal ? paper.abstract : simplifiedAbstract) || paper.abstract}
             </p>
@@ -120,12 +121,12 @@ export function PaperCard({ paper }: PaperCardProps) {
                   >
                     {isSimplifying ? (
                       <>
-                        <Lightbulb className="mr-2 h-4 w-4 animate-pulse" />
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                         Simplifying...
                       </>
                     ) : (
                       <>
-                        <Lightbulb className="mr-2 h-4 w-4" />
+                        <TreeDeciduous className="mr-2 h-4 w-4" />
                         Simplify
                       </>
                     )}
@@ -141,7 +142,7 @@ export function PaperCard({ paper }: PaperCardProps) {
                     >
                       {showingOriginal ? (
                         <>
-                          <Lightbulb className="mr-2 h-4 w-4" />
+                          <Sprout className="mr-2 h-4 w-4" />
                           Show Simplified
                         </>
                       ) : (
@@ -193,7 +194,7 @@ export function PaperCard({ paper }: PaperCardProps) {
       </CardContent>
 
       {!isFocused && (
-        <CardFooter className="pt-6">
+        <CardFooter className="pt-6 z-[100]">
           <Button 
             variant="outline" 
             className="w-full"
@@ -209,14 +210,16 @@ export function PaperCard({ paper }: PaperCardProps) {
 
   return (
     <>
-      <Card className="flex flex-col">
+      <Card className="flex flex-col shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+        
+            
         <PaperCardContent />
-      </Card>
+    </Card>
 
       <Dialog open={isFocused} onOpenChange={setIsFocused}>
         <DialogPortal>
           <DialogOverlay 
-            className="bg-background/95 backdrop-blur-sm"
+            className="bg-background/95 backdrop-blur-lg"
             style={{
               background: 'rgba(0, 0, 0, 0.7)'
             }}
