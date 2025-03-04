@@ -45,7 +45,7 @@ export default function ScientificPaperFeed() {
         ? [`${filters.category}.${filters.field}`]
         : [filters.category];
 
-      const response = await fetch('/api/dummy/papers', {
+      const response = await fetch('/api/papers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
