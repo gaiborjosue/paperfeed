@@ -6,6 +6,7 @@ export interface Paper {
   categories: string[];
   publishDate: string;
   announceType: string;
+  guid?: string; // Optional GUID from arXiv
 }
 
 export interface SearchParams {

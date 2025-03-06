@@ -1,91 +1,179 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { CalendarIcon, Users, X, Telescope, RotateCcw, Sprout, LoaderCircle, TreeDeciduous } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import {
+  CalendarIcon,
+  Users,
+  X,
+  Telescope,
+  RotateCcw,
+  Sprout,
+  LoaderCircle,
+  TreeDeciduous,
+  Droplet,
+  Axe,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogOverlay,
   DialogPortal,
-} from "@/components/ui/dialog"
-import { cn } from "@/lib/utils"
-import { DialogTitle } from "@radix-ui/react-dialog"
-
-interface Paper {
-  title: string
-  link: string
-  abstract: string
-  authors: string[]
-  categories: string[]
-  publishDate: string
-  announceType: string
-}
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import { DialogTitle } from "@radix-ui/react-dialog";
+import 'katex/dist/katex.min.css';
+import { InlineMath, BlockMath } from 'react-katex';
+import { useSession } from "next-auth/react";
+import { useUserCredits } from "@/app/providers";
+import { Paper } from "@/types"; // Import Paper type from types
+import { ArxivService } from "@/utils/arxiv";
 
 interface PaperCardProps {
-  paper: Paper
+  paper: Paper;
 }
 
+// Function to parse LaTeX content in text
+const renderLatexContent = (text: string) => {
+  if (!text) return null;
+  
+  // Replace LaTeX patterns
+  const parts = text.split(/(\$\$.*?\$\$|\$.*?\$)/gs);
+  
+  return parts.map((part, index) => {
+    // Display block math ($$...$$)
+    if (part.startsWith('$$') && part.endsWith('$$')) {
+      const formula = part.slice(2, -2);
+      try {
+        return <BlockMath key={index} math={formula} />;
+      } catch (error) {
+        console.error('Error rendering LaTeX block:', error);
+        return <span key={index} className="text-red-500">{part}</span>;
+      }
+    }
+    // Display inline math ($...$)
+    else if (part.startsWith('$') && part.endsWith('$')) {
+      const formula = part.slice(1, -1);
+      try {
+        return <InlineMath key={index} math={formula} />;
+      } catch (error) {
+        console.error('Error rendering LaTeX inline:', error);
+        return <span key={index} className="text-red-500">{part}</span>;
+      }
+    }
+    // Regular text
+    else {
+      return <span key={index}>{part}</span>;
+    }
+  });
+};
+
 export function PaperCard({ paper }: PaperCardProps) {
-  const [isFocused, setIsFocused] = useState(false)
-  const [isSimplifying, setIsSimplifying] = useState(false)
-  const [simplifiedAbstract, setSimplifiedAbstract] = useState<string | null>(null)
-  const [showingOriginal, setShowingOriginal] = useState(true)
+  const { data: session } = useSession();
+  // Use the shared user credits context instead of local state
+  const { credits: remainingCredits, useCredit } = useUserCredits();
+  
+  const [isFocused, setIsFocused] = useState(false);
+  const [isSimplifying, setIsSimplifying] = useState(false);
+  const [simplifiedAbstract, setSimplifiedAbstract] = useState<string | null>(null);
+  const [showingOriginal, setShowingOriginal] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Load simplified abstract from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(`simplified-${paper.link}`)
+    const stored = localStorage.getItem(`simplified-${paper.link}`);
     if (stored) {
-      setSimplifiedAbstract(stored)
+      setSimplifiedAbstract(stored);
     }
-  }, [paper.link])
+  }, [paper.link]);
 
   const handleSimplify = async () => {
     // If we already have a simplified version, just toggle to it
     if (simplifiedAbstract) {
-      setShowingOriginal(false)
-      return
+      setShowingOriginal(false);
+      return;
     }
 
-    setIsSimplifying(true)
+    setIsSimplifying(true);
+    setIsLoading(true);
+
     try {
+      // Extract the arXiv ID from the GUID or paper link
+      let arxivId = "";
+      
+      if (paper.guid) {
+        arxivId = ArxivService.extractArxivId(paper.guid) || "";
+      }
+      
+      // If no valid GUID found, extract from the paper link as fallback
+      if (!arxivId && paper.link) {
+        arxivId = ArxivService.extractArxivId(paper.link) || "";
+      }
+      
+      if (!arxivId) {
+        throw new Error('Could not extract valid arXiv ID');
+      }
+      
+      // Use a credit via the context
+      if (session?.user) {
+        const success = await useCredit();
+        if (!success) {
+          throw new Error('Failed to use credit');
+        }
+      }
+
+      // Generate the simplified version using the arXiv ID instead of the abstract
       const response = await fetch('/api/completion', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: `Please simplify this scientific abstract and make it easier to understand for a general audience, while preserving the key points:\n\n${paper.abstract}`
-        })
+          arxivId: arxivId
+        }),
       });
+
       const data = await response.json();
       
       // Store in localStorage and state
-      localStorage.setItem(`simplified-${paper.link}`, data.text)
-      setSimplifiedAbstract(data.text)
-      setShowingOriginal(false)
+      localStorage.setItem(`simplified-${paper.link}`, data.text);
+      setSimplifiedAbstract(data.text);
+      setShowingOriginal(false);
     } catch (error) {
-      console.error('Error simplifying abstract:', error)
+      console.error('Error simplifying abstract:', error);
     } finally {
-      setIsSimplifying(false)
+      setIsSimplifying(false);
+      setIsLoading(false);
     }
-  }
+  };
 
   const toggleAbstract = () => {
-    setShowingOriginal(!showingOriginal)
-  }
+    setShowingOriginal(!showingOriginal);
+  };
+
+  // Render credit drops
+  const renderCreditDrops = () => {
+    if (remainingCredits === null || !session?.user) return null;
+  
+    return (
+      <div className="flex items-center mb-2 text-gray-500 text-sm">
+        <Axe className="h-4 w-4 mr-1" />
+        {remainingCredits} Simplifications left
+      </div>
+    );
+  };
 
   const PaperCardContent = () => (
     <>
       <CardHeader>
         <CardTitle className={cn(
           "text-lg font-semibold font-mono",
-          isFocused ? "" : "line-clamp-2"
+          isFocused ? "" : "line-clamp-4"
         )}>
-          {paper.title}
+          {renderLatexContent(paper.title)}
         </CardTitle>
         <div className="flex items-center text-sm text-muted-foreground mt-2">
           <CalendarIcon className="mr-2 h-4 w-4" />
@@ -101,36 +189,50 @@ export function PaperCard({ paper }: PaperCardProps) {
         <div className="space-y-4">
           {/* Abstract with Toggle Buttons */}
           <div>
-            <p className={cn(
+            <div className={cn(
               "text-sm text-muted-foreground",
               isFocused ? "" : "line-clamp-3",
               !showingOriginal ? "text-black" : "text-gray-500"
             )}>
-              {(showingOriginal ? paper.abstract : simplifiedAbstract) || paper.abstract}
-            </p>
+              {renderLatexContent((showingOriginal ? paper.abstract : simplifiedAbstract) || paper.abstract)}
+            </div>
             
             {isFocused && (
-              <div className="flex gap-2 mt-4">
+              <div className="flex flex-row gap-2 mt-4 items-center">
+    
                 {!simplifiedAbstract ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSimplify}
-                    disabled={isSimplifying}
-                    className="bg-yellow-200"
-                  >
-                    {isSimplifying ? (
-                      <>
-                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                        Simplifying...
-                      </>
-                    ) : (
-                      <>
-                        <TreeDeciduous className="mr-2 h-4 w-4" />
-                        Simplify
-                      </>
-                    )}
-                  </Button>
+                  session?.user ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSimplify}
+                      disabled={isSimplifying || (remainingCredits !== null && remainingCredits <= 0)}
+                      className={cn(
+                        "bg-yellow-200",
+                        (remainingCredits !== null && remainingCredits <= 0) && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {isSimplifying ? (
+                        <>
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                          Simplifying...
+                        </>
+                      ) : (
+                        <>
+                          <TreeDeciduous className="mr-2 h-4 w-4" />
+                          {remainingCredits !== null && remainingCredits <= 0 
+                            ? "No Simplifications Left" 
+                            : "Simplify"}
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      <Link href="/auth/signin" className="text-blue-500 hover:underline">
+                        Sign in
+                      </Link> to simplify this abstract
+                    </div>
+                  )
                 ) : (
                   // Show toggle buttons if we have both versions
                   <div className="flex gap-2">
@@ -154,6 +256,8 @@ export function PaperCard({ paper }: PaperCardProps) {
                     </Button>
                   </div>
                 )}
+
+                {session?.user && renderCreditDrops()}
               </div>
             )}
           </div>
@@ -206,15 +310,13 @@ export function PaperCard({ paper }: PaperCardProps) {
         </CardFooter>
       )}
     </>
-  )
+  );
 
   return (
     <>
-      <Card className="flex flex-col shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-        
-            
+      <Card className="flex flex-col shadow-[0_0_30px_rgba(255,255,255,0.3)] paper-card">
         <PaperCardContent />
-    </Card>
+      </Card>
 
       <Dialog open={isFocused} onOpenChange={setIsFocused}>
         <DialogPortal>
@@ -228,7 +330,7 @@ export function PaperCard({ paper }: PaperCardProps) {
           <DialogContent className="sm:max-w-[800px] p-0 shadow-[0_0_1500px_rgba(255,255,255,0.3)] border-none bg-transparent">
             <Card 
               className={cn(
-                "relative border bg-card",
+                "relative border bg-card paper-card",
                 "shadow-white-500",
                 "before:pointer-events-none"
               )}
@@ -251,5 +353,5 @@ export function PaperCard({ paper }: PaperCardProps) {
         </DialogPortal>
       </Dialog>
     </>
-  )
+  );
 }

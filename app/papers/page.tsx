@@ -1,13 +1,13 @@
 
 import { getServerSession } from 'next-auth'
 import ScientificPaperFeed from "@/components/ScientificPaperFeed"
-import Header from '@/components/Header'
+import HeaderSt from '@/components/HeaderSt'
 
 export default async function Home() {
   
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <HeaderSt />
       <main>
         <ScientificPaperFeed />
       </main>

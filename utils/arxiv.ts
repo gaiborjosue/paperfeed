@@ -1,7 +1,9 @@
 import { Paper } from "@/types";
+import { parseStringPromise } from 'xml2js';
 
 export class ArxivService {
   private static readonly BASE_URL = 'https://rss.arxiv.org/rss/';
+  private static readonly API_URL = 'https://export.arxiv.org/api/query';
 
   static buildFeedUrl(categories: string[]): string {
     if (!categories.length) {
@@ -28,7 +30,8 @@ export class ArxivService {
       ),
       categories: Array.isArray(item.category) ? item.category : [item.category],
       publishDate: item.pubDate[0],
-      announceType: item['arxiv:announce_type']?.[0] || 'unknown'
+      announceType: item['arxiv:announce_type']?.[0] || 'unknown',
+      guid: item.guid?.[0]?._?.trim() || item.guid?.[0] || null // Extract guid if available
     };
   }
 
@@ -39,5 +42,57 @@ export class ArxivService {
     return keywords.some(keyword => 
       searchText.includes(keyword.toLowerCase())
     );
+  }
+
+  /**
+   * Fetches a paper's details by its arXiv ID using the official API
+   * @param arxivId The arXiv ID (e.g., "2503.02283v1")
+   * @returns The paper abstract or null if not found
+   */
+  static async fetchPaperById(arxivId: string): Promise<string | null> {
+    try {
+      const url = `${this.API_URL}?id_list=${encodeURIComponent(arxivId)}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch paper details: ${response.statusText}`);
+      }
+      
+      const xmlData = await response.text();
+      const parsedData = await parseStringPromise(xmlData);
+      
+      // Navigate the complex XML structure to find the abstract
+      const entry = parsedData?.feed?.entry?.[0];
+      if (!entry) {
+        return null;
+      }
+      
+      const abstract = entry.summary?.[0]?.trim();
+      return abstract || null;
+    } catch (error) {
+      console.error('Error fetching paper details:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Extracts the arXiv ID from a GUID or URL
+   * @param source GUID or URL containing an arXiv ID
+   * @returns The extracted arXiv ID or null if not found
+   */
+  static extractArxivId(source: string): string | null {
+    // From GUID format like "oai:arXiv.org:2503.02283v1"
+    let match = source.match(/oai:arXiv\.org:(.+)/);
+    if (match && match[1]) {
+      return match[1];
+    }
+    
+    // From URL format like "https://arxiv.org/abs/2503.02283v1"
+    match = source.match(/arxiv\.org\/abs\/(.+?)($|\/)/);
+    if (match && match[1]) {
+      return match[1];
+    }
+    
+    return null;
   }
 }

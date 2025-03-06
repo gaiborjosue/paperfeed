@@ -126,3 +126,48 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* LaTeX styling improvements */
+.katex {
+  font-size: 1.1em !important;
+}
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+}
+
+/* Dark mode support for LaTeX */
+.dark .katex {
+  color: var(--foreground);
+}
+
+/* Improve spacing for LaTeX in the paper cards */
+.paper-card .katex,
+.paper-card .katex-display {
+  margin: 0.25rem 0;
+}
+
+/* Ensure LaTeX formulas don't break card layout */
+.katex-display > .katex {
+  max-width: 100%;
+  display: block;
+}
+
+/* Better inline math display */
+.katex-mathml {
+  display: none;
+}
+/* Credit droplet styling */
+.credit-droplet {
+  transition: all 0.3s ease;
+}
+
+.credit-droplet.active {
+  filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.5));
+}
+
+.credit-droplet.inactive {
+  opacity: 0.5;
+}

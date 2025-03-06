@@ -1,14 +1,24 @@
-
 import { createClient } from '@supabase/supabase-js'
 
 // Use environment variables with fallbacks for safety
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iqoobnpfdegngitnevwk.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlxb29ibnBmZGVnbmdpdG5ldndrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDkyNTY3ODcsImV4cCI6MjAyNDgzMjc4N30.aSxIzimMeDcaVN05uzWBgaMXvlFIUKMuQXmzVp_3JcI'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-// Initialize client with appropriate error handling
+// Initialize standard client for client-side operations
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-export { supabase }
+// Create an admin client for server-side operations that need to bypass RLS
+const adminSupabase = process.env.SUPABASE_SERVICE_ROLE_KEY 
+  ? createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : null
+
+export { supabase, adminSupabase }
 
 // Client-side Supabase helper for signup
 export const createClientSupabase = () => {
