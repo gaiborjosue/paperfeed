@@ -187,7 +187,7 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
 
       {/* Search Button */}
       <Button 
-        className="w-full md:w-auto md:px-8 mt-4"
+        className="w-full md:px-8 mt-4"
         disabled={!selectedCategory || (hasSubfields && !selectedField)}
         onClick={handleSearch}
       >
