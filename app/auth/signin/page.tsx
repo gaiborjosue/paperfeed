@@ -1,20 +1,17 @@
 import { redirect } from "next/navigation";
-
 import { getServerSession } from "next-auth";
-
 import SignInForm from "./SignInForm";
-
 import { authOptions } from "@/lib/auth";
 
-export default async function SignIn({
-  searchParams,
-}: {
-  searchParams: { registered?: string };
-}) {
+interface PageProps {
+  params: { [key: string]: string | string[] };
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default async function SignIn({ searchParams }: PageProps) {
   const session = await getServerSession(authOptions);
 
   // Redirect to home if already signed in
-
   if (session) {
     redirect("/");
   }
