@@ -2,13 +2,19 @@
 
 // components/ScientificPaperFeed.tsx
 import { useState, useEffect } from "react"
-import { Loader2, LayoutGrid, Square } from "lucide-react"
+import { Loader2, LayoutGrid, Square, Menu } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PaperFilters } from "./PaperFilters"
 import { PaperCard } from "./PaperCard"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface Paper {
   title: string
@@ -93,54 +99,84 @@ export default function ScientificPaperFeed() {
     localStorage.setItem('paperfeed-view-mode', mode)
   }
 
+  // Desktop view controls
+  const DesktopViewControls = () => (
+    <div className="hidden md:flex items-center space-x-2">
+      <span className="text-sm text-gray-400">View:</span>
+      <div className="border rounded-md p-1 space-x-1 flex">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn("h-8 w-8", viewMode === "grid" && "bg-muted")}
+              onClick={() => toggleViewMode("grid")}
+            >
+              <LayoutGrid size={16} />
+              <span className="sr-only">Grid View</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Grid View</p>
+          </TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className={cn("h-8 w-8", viewMode === "list" && "bg-muted")}
+              onClick={() => toggleViewMode("list")}
+            >
+              <Square size={16} />
+              <span className="sr-only">List View</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>List View</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </div>
+  )
+
+  // Mobile view controls dropdown
+  const MobileViewControls = () => (
+    <div className="md:hidden">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Menu className="h-4 w-4 mr-2" />
+            View
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => toggleViewMode("grid")} className={viewMode === "grid" ? "bg-muted" : ""}>
+            <LayoutGrid className="h-4 w-4 mr-2" />
+            Grid
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => toggleViewMode("list")} className={viewMode === "list" ? "bg-muted" : ""}>
+            <Square className="h-4 w-4 mr-2" />
+            List
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+
   return (
-    <div className="container mx-auto py-8 relative pt-32">
+    <div className="container mx-auto px-4 py-8 relative pt-32">
       <div className="mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Today's Research Papers</h1>
+        <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold">Today's Research Papers</h1>
           
-            <TooltipProvider>
-            <div className="flex items-center space-x-2">
-              <span className="mr-2">View Mode</span>
-              
-              <div className="border rounded-md p-1 space-x-2">
-                <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className={cn("h-8 w-8", viewMode === "grid" && "bg-muted")}
-                  onClick={() => toggleViewMode("grid")}
-                  >
-                  <LayoutGrid size={18} />
-                  <span className="sr-only">Grid View</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Grid View</p>
-                </TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className={cn("h-8 w-8", viewMode === "list" && "bg-muted")}
-                  onClick={() => toggleViewMode("list")}
-                  >
-                  <Square size={18} />
-                  <span className="sr-only">List View</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>List View</p>
-                </TooltipContent>
-                </Tooltip>
-              </div>
-              
+          <TooltipProvider>
+            <div className="flex items-center">
+              <DesktopViewControls />
+              <MobileViewControls />
             </div>
-            </TooltipProvider>
+          </TooltipProvider>
         </div>
         
         <PaperFilters onSearch={handleSearch} />
@@ -166,8 +202,8 @@ export default function ScientificPaperFeed() {
 
       {!loading && !error && papers.length > 0 && (
         <div className={cn(
-          "grid gap-6",
-          viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
+          "grid gap-4 md:gap-6",
+          viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
         )}>
           {papers.map((paper) => (
             <PaperCard key={paper.link} paper={paper} />

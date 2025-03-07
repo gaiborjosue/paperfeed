@@ -198,7 +198,7 @@ export function PaperCard({ paper }: PaperCardProps) {
             </div>
             
             {isFocused && (
-              <div className="flex flex-row gap-2 mt-4 items-center">
+              <div className="flex flex-col md:flex-row gap-2 mt-4 items-start md:items-center">
     
                 {!simplifiedAbstract ? (
                   session?.user ? (
@@ -327,7 +327,7 @@ export function PaperCard({ paper }: PaperCardProps) {
             }}
           />
           <DialogTitle className="sr-only">Paper details</DialogTitle>
-          <DialogContent className="sm:max-w-[800px] p-0 shadow-[0_0_1500px_rgba(255,255,255,0.3)] border-none bg-transparent">
+          <DialogContent className="sm:mx-auto sm:max-w-[800px] p-0 shadow-[0_0_1500px_rgba(255,255,255,0.3)] border-none bg-transparent max-h-[95vh] overflow-auto">
             <Card 
               className={cn(
                 "relative border bg-card paper-card",
@@ -335,17 +335,18 @@ export function PaperCard({ paper }: PaperCardProps) {
                 "before:pointer-events-none"
               )}
             >
-              <div className="absolute right-4 top-4 z-50">
+              {/* Sticky close button to ensure it's always visible */}
+              <div className="sticky top-0 right-0 left-0 z-50 p-2 flex justify-end">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="hover:bg-background/20"
                   onClick={() => setIsFocused(false)}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
-              <div className="relative z-10">
+              <div className="relative z-10 px-1 pb-4">
                 <PaperCardContent />
               </div>
             </Card>

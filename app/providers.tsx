@@ -51,11 +51,6 @@ function UserCreditsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session]);
 
-  // Throttle the fetchCredits function to prevent too many API calls
-  const throttledFetchCredits = useCallback(
-    throttle(fetchCredits, 5000), // Only allow once every 5 seconds
-    [fetchCredits]
-  );
   
   // Use a credit
   const useCredit = useCallback(async (): Promise<boolean> => {
@@ -89,7 +84,7 @@ function UserCreditsProvider({ children }: { children: React.ReactNode }) {
   }, [session, fetchCredits]);
   
   return (
-    <UserCreditsContext.Provider value={{ credits, loading, fetchCredits: throttledFetchCredits, useCredit }}>
+    <UserCreditsContext.Provider value={{ credits, loading, fetchCredits: useCredit }}>
       {children}
     </UserCreditsContext.Provider>
   );

@@ -111,7 +111,7 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {/* Category Selector */}
         <div className="space-y-2">
           <Label>Category</Label>
@@ -122,7 +122,7 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" className="max-h-[40vh] overflow-y-auto">
               <SelectGroup>
                 {Object.keys(CATEGORY_MAP).map((category) => (
                   <SelectItem 
@@ -154,7 +154,7 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
                   : "Select field"
               } />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" className="max-h-[40vh] overflow-y-auto">
               <SelectGroup>
                 {fields.map((field) => (
                   <SelectItem 
@@ -162,8 +162,8 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
                     value={field.key || ""}
                   >
                     <span className="flex items-center justify-between w-full">
-                      {field.field}
-                      <span className="text-xs text-muted-foreground ml-2">
+                      <span className="truncate mr-1">{field.field}</span>
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
                         ({field.key})
                       </span>
                     </span>
@@ -175,7 +175,7 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
         </div>
 
         {/* Keywords Input */}
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-2 lg:col-span-1">
           <Label>Keywords (comma-separated)</Label>
           <Input
             placeholder="e.g., neural networks, deep learning"
@@ -187,7 +187,7 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
 
       {/* Search Button */}
       <Button 
-        className="w-full"
+        className="w-full md:w-auto md:px-8 mt-4"
         disabled={!selectedCategory || (hasSubfields && !selectedField)}
         onClick={handleSearch}
       >
