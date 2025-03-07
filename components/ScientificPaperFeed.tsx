@@ -74,7 +74,7 @@ export default function ScientificPaperFeed() {
         body: JSON.stringify({
           categories,
           keywords: filters.keywords,
-          limit: 200
+          // limit: 200
         })
       })
 
