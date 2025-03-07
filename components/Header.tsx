@@ -11,7 +11,11 @@ import { SectionWrapper } from "@/components/Section"
 // Modified links for PaperFeed
 const links = [
   {
-    title: "Paper Feed",
+    title: "Home",
+    url: "/",
+  },
+  {
+    title: "Papers",
     url: "/papers",
   }
 ]
@@ -61,7 +65,11 @@ function Navigation() {
   )
 }
 
-function MobileMenu({ showMenu }) {
+interface MobileMenuProps {
+  showMenu: boolean;
+}
+
+function MobileMenu({ showMenu }: MobileMenuProps) {
   const { data: session } = useSession()
   const pathname = usePathname()
 

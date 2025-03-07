@@ -94,48 +94,53 @@ export default function ScientificPaperFeed() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 relative pt-32">
       <div className="mb-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Latest Research Papers</h1>
+          <h1 className="text-3xl font-bold">Today's Research Papers</h1>
           
-          <TooltipProvider>
-            <div className="flex items-center space-x-2 border rounded-md p-1">
-              <Tooltip>
+            <TooltipProvider>
+            <div className="flex items-center space-x-2">
+              <span className="mr-2">View Mode</span>
+              
+              <div className="border rounded-md p-1 space-x-2">
+                <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={cn("h-8 w-8", viewMode === "grid" && "bg-muted")}
-                    onClick={() => toggleViewMode("grid")}
+                  variant="ghost" 
+                  size="icon" 
+                  className={cn("h-8 w-8", viewMode === "grid" && "bg-muted")}
+                  onClick={() => toggleViewMode("grid")}
                   >
-                    <LayoutGrid size={18} />
-                    <span className="sr-only">Grid View</span>
+                  <LayoutGrid size={18} />
+                  <span className="sr-only">Grid View</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Grid View</p>
                 </TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
+                </Tooltip>
+                
+                <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className={cn("h-8 w-8", viewMode === "list" && "bg-muted")}
-                    onClick={() => toggleViewMode("list")}
+                  variant="ghost" 
+                  size="icon"
+                  className={cn("h-8 w-8", viewMode === "list" && "bg-muted")}
+                  onClick={() => toggleViewMode("list")}
                   >
-                    <Square size={18} />
-                    <span className="sr-only">List View</span>
+                  <Square size={18} />
+                  <span className="sr-only">List View</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>List View</p>
                 </TooltipContent>
-              </Tooltip>
+                </Tooltip>
+              </div>
+              
             </div>
-          </TooltipProvider>
+            </TooltipProvider>
         </div>
         
         <PaperFilters onSearch={handleSearch} />
