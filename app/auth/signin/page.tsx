@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 export default async function SignIn({ searchParams }: { searchParams: { [key: string]: string } }) {
   const session = await getServerSession(authOptions);
 
-  // Redirect to home if already signed in
+  // Redirect to papers page if already signed in
   if (session) {
-    redirect("/");
+    redirect("/papers");
   }
   
   // Check if registered param exists and equals "true"

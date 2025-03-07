@@ -1,10 +1,14 @@
+"use client"
+
 import Image from "next/image"
-
+import Link from "next/link"
+import { useSession } from "next-auth/react"
 import { SectionWrapper } from "@/components/Section"
-
 import appImage from "@/images/app.png"
 
 export function Hero() {
+  const { data: session } = useSession()
+
   return (
     <div className="relative pt-32">
       <div className="pointer-events-none absolute inset-0 bg-center bg-grid-white/10 bg-grid-16 [mask-image:radial-gradient(white,transparent_85%)]"></div>
@@ -25,11 +29,11 @@ export function Hero() {
           </h2>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-4 lg:flex-row">
-            <a
-              href="#"
+            <Link
+              href={session ? "/papers" : "/auth/signin"}
               className="inline-block rounded-full bg-white px-4 py-1.5 text-sm font-medium text-zinc-950 transition duration-300 hover:bg-zinc-300">
-              Start discovering for free
-            </a>
+              {session ? "Go to paper feed" : "Start discovering for free"}
+            </Link>
 
             {/* <span className="text-sm">No credit card required</span> */}
           </div>

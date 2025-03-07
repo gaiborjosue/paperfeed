@@ -1,47 +1,65 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useState } from "react";
+
+import { signIn } from "next-auth/react";
+
+import { useRouter, useSearchParams } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
+
+import { Input } from "@/components/ui/input";
+
+import { Label } from "@/components/ui/label";
 
 export default function SignInForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/'
-  
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+
+  const searchParams = useSearchParams();
+
+  const callbackUrl = searchParams.get("callbackUrl") || "/papers";
+
+  const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setIsLoading(true)
-    
+    e.preventDefault();
+
+    setError("");
+
+    setIsLoading(true);
+
     try {
-      const result = await signIn('credentials', {
+      const result = await signIn("credentials", {
         redirect: false,
+
         email,
+
         password,
-      })
-      
+      });
+
       if (result?.error) {
-        setError('Invalid credentials')
-        setIsLoading(false)
-        return
+        setError("Invalid credentials");
+
+        setIsLoading(false);
+
+        return;
       }
-      
-      router.push(callbackUrl)
+
+      router.push(callbackUrl);
     } catch (error) {
-      console.error('Sign in error:', error)
-      setError('An unexpected error occurred')
-      setIsLoading(false)
+      console.error("Sign in error:", error);
+
+      setError("An unexpected error occurred");
+
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -50,9 +68,10 @@ export default function SignInForm() {
           {error}
         </div>
       )}
-      
+
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
+
         <Input
           id="email"
           type="email"
@@ -62,9 +81,10 @@ export default function SignInForm() {
           placeholder="you@example.com"
         />
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
+
         <Input
           id="password"
           type="password"
@@ -74,10 +94,10 @@ export default function SignInForm() {
           placeholder="••••••••"
         />
       </div>
-      
+
       <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? 'Signing in...' : 'Sign in'}
+        {isLoading ? "Signing in..." : "Sign in"}
       </Button>
     </form>
-  )
+  );
 }

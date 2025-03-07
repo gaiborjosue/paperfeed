@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 export default async function SignUp({ }) {
   const session = await getServerSession(authOptions);
 
-  // Redirect to home if already signed in
+  // Redirect to papers page if already signed in
   if (session) {
-    redirect("/");
+    redirect("/papers");
   }
 
   return (
