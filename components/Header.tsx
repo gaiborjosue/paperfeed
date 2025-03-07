@@ -9,15 +9,7 @@ import { Button } from "@/components/ui/button"
 import { SectionWrapper } from "@/components/Section"
 
 // Modified links for PaperFeed
-const links = [
-  {
-    title: "Home",
-    url: "/",
-  },
-  {
-    title: "Papers",
-    url: "/papers",
-  }
+const links: any[] = [
 ]
 
 function Navigation() {
@@ -129,12 +121,12 @@ export function Header() {
 
   return (
     <div className="fixed inset-x-0 top-0 z-50 bg-zinc-950/30 backdrop-blur-lg">
-      <SectionWrapper>
+      <SectionWrapper className={undefined}>
         <header>
           <nav className="flex items-center justify-between py-4">
             <div>
               <Link href="/" className="inline-flex items-center gap-2">
-                <span className="text-lg font-bold text-white lg:text-2xl">PaperFeed</span>
+                <span className="text-lg font-bold text-white lg:text-2xl">PaperFeed-beta</span>
               </Link>
             </div>
 

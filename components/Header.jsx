@@ -126,7 +126,7 @@ export function Header() {
           <nav className="flex items-center justify-between py-4">
             <div>
               <Link href="/" className="inline-flex items-center gap-2">
-                <span className="text-lg font-bold text-white lg:text-2xl">PaperFeed</span>
+                <span className="text-lg font-bold text-white lg:text-2xl">PaperFeed-beta</span>
               </Link>
             </div>
 
