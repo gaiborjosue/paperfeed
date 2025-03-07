@@ -3,12 +3,12 @@ import { getServerSession } from "next-auth";
 import SignInForm from "./SignInForm";
 import { authOptions } from "@/lib/auth";
 
-interface PageProps {
-  params: { [key: string]: string | string[] };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
-
-export default async function SignIn({ searchParams }: PageProps) {
+// In Next.js, page components receive searchParams directly
+export default async function SignIn({
+  searchParams,
+}: {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}) {
   const session = await getServerSession(authOptions);
 
   // Redirect to home if already signed in
@@ -16,7 +16,7 @@ export default async function SignIn({ searchParams }: PageProps) {
     redirect("/");
   }
 
-  const isNewRegistration = searchParams.registered === "true";
+  const isNewRegistration = searchParams?.registered === "true";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
