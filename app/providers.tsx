@@ -84,7 +84,7 @@ function UserCreditsProvider({ children }: { children: React.ReactNode }) {
   }, [session, fetchCredits]);
   
   return (
-    <UserCreditsContext.Provider value={{ credits, loading, fetchCredits: useCredit }}>
+    <UserCreditsContext.Provider value={{ credits, loading, fetchCredits, useCredit }}>
       {children}
     </UserCreditsContext.Provider>
   );
