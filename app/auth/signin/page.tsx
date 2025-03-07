@@ -9,12 +9,8 @@ export const metadata: Metadata = {
   description: "Sign in to your PaperFeed account",
 };
 
-// Next.js 15 correct type definition - doesn't use an interface
-export default async function SignIn({
-  searchParams,
-}: {
-  searchParams: Record<string, string | string[] | undefined>;
-}) {
+// Let Next.js infer the types rather than explicitly defining them
+export default async function SignIn({ searchParams }: { searchParams: { [key: string]: string } }) {
   const session = await getServerSession(authOptions);
 
   // Redirect to home if already signed in

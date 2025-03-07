@@ -9,12 +9,8 @@ export const metadata: Metadata = {
   description: "Create a new PaperFeed account",
 };
 
-// Next.js 15 correct type definition - use same pattern as signin page
-export default async function SignUp({
-  searchParams,
-}: {
-  searchParams: Record<string, string | string[] | undefined>;
-}) {
+// Let Next.js infer the types rather than explicitly defining them
+export default async function SignUp({ }) {
   const session = await getServerSession(authOptions);
 
   // Redirect to home if already signed in
