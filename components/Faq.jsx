@@ -19,7 +19,7 @@ export function Faq() {
     {
       title: "What is PaperFeed?",
       content:
-        "Recharger is an innovative app that allows you to chat directly with your PDF documents to extract the information you need. It simplifies document understanding and helps you save valuable time.",
+        "PaperFeed is a centralized platform for discovering and simplifying scientific papers from arXiv. It allows users to search for recently published papers across various academic fields and categories, then offers AI-powered simplification to make complex research more accessible.",
     },
     {
       title: "How does the simplification feature work?",
