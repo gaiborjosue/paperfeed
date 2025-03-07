@@ -1,16 +1,23 @@
 import { redirect } from "next/navigation";
-
 import { getServerSession } from "next-auth";
-
 import SignUpForm from "./SignUpForm";
-
 import { authOptions } from "@/lib/auth";
+import type { Metadata } from "next";
 
-export default async function SignUp() {
+export const metadata: Metadata = {
+  title: "Sign Up - PaperFeed",
+  description: "Create a new PaperFeed account",
+};
+
+// Next.js 15 correct type definition - use same pattern as signin page
+export default async function SignUp({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const session = await getServerSession(authOptions);
 
   // Redirect to home if already signed in
-
   if (session) {
     redirect("/");
   }

@@ -2,21 +2,28 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import SignInForm from "./SignInForm";
 import { authOptions } from "@/lib/auth";
+import type { Metadata } from "next";
 
-interface PageProps {
-  params: { [key: string]: string | string[] };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
+export const metadata: Metadata = {
+  title: "Sign In - PaperFeed",
+  description: "Sign in to your PaperFeed account",
+};
 
-export default async function SignIn({ searchParams }: PageProps) {
+// Next.js 15 correct type definition - doesn't use an interface
+export default async function SignIn({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const session = await getServerSession(authOptions);
 
   // Redirect to home if already signed in
   if (session) {
     redirect("/");
   }
-
-  const isNewRegistration = searchParams.registered === "true";
+  
+  // Check if registered param exists and equals "true"
+  const isNewRegistration = searchParams?.registered === "true";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
