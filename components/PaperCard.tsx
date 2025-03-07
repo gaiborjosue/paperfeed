@@ -74,13 +74,14 @@ const renderLatexContent = (text: string) => {
 export function PaperCard({ paper }: PaperCardProps) {
   const { data: session } = useSession();
   // Use the shared user credits context instead of local state
-  const { credits: remainingCredits, useCredit } = useUserCredits();
+  const { credits: remainingCredits, fetchCredits } = useUserCredits();
   
   const [isFocused, setIsFocused] = useState(false);
   const [isSimplifying, setIsSimplifying] = useState(false);
   const [simplifiedAbstract, setSimplifiedAbstract] = useState<string | null>(null);
   const [showingOriginal, setShowingOriginal] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Load simplified abstract from localStorage on mount
   useEffect(() => {
@@ -99,6 +100,7 @@ export function PaperCard({ paper }: PaperCardProps) {
 
     setIsSimplifying(true);
     setIsLoading(true);
+    setErrorMessage(null);
 
     try {
       // Extract the arXiv ID from the GUID or paper link
@@ -116,16 +118,8 @@ export function PaperCard({ paper }: PaperCardProps) {
       if (!arxivId) {
         throw new Error('Could not extract valid arXiv ID');
       }
-      
-      // Use a credit via the context
-      if (session?.user) {
-        const success = await useCredit();
-        if (!success) {
-          throw new Error('Failed to use credit');
-        }
-      }
 
-      // Generate the simplified version using the arXiv ID instead of the abstract
+      // Send request directly to the completion endpoint which now handles credit checking
       const response = await fetch('/api/completion', {
         method: 'POST',
         headers: {
@@ -136,7 +130,15 @@ export function PaperCard({ paper }: PaperCardProps) {
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to simplify abstract');
+      }
+
       const data = await response.json();
+      
+      // Always fetch the latest credits from the server after simplification
+      fetchCredits();
       
       // Store in localStorage and state
       localStorage.setItem(`simplified-${paper.link}`, data.text);
@@ -144,6 +146,11 @@ export function PaperCard({ paper }: PaperCardProps) {
       setShowingOriginal(false);
     } catch (error) {
       console.error('Error simplifying abstract:', error);
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage('An error occurred while simplifying');
+      }
     } finally {
       setIsSimplifying(false);
       setIsLoading(false);
@@ -199,6 +206,9 @@ export function PaperCard({ paper }: PaperCardProps) {
             
             {isFocused && (
               <div className="flex flex-col md:flex-row gap-2 mt-4 items-start md:items-center">
+                {errorMessage && (
+                  <div className="text-red-500 text-sm mb-2">{errorMessage}</div>
+                )}
     
                 {!simplifiedAbstract ? (
                   session?.user ? (

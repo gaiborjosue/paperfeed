@@ -10,14 +10,12 @@ type UserCreditsContextType = {
   credits: number | null;
   loading: boolean;
   fetchCredits: () => Promise<void>;
-  useCredit: () => Promise<boolean>;
 };
 
 const UserCreditsContext = createContext<UserCreditsContextType>({
   credits: null,
   loading: false,
   fetchCredits: async () => {},
-  useCredit: async () => false,
 });
 
 export const useUserCredits = () => useContext(UserCreditsContext);
@@ -51,28 +49,11 @@ function UserCreditsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session]);
 
-  
-  // Use a credit
-  const useCredit = useCallback(async (): Promise<boolean> => {
-    if (!session?.user) return false;
-    
-    try {
-      const response = await fetch('/api/user/credits', {
-        method: 'POST',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to use credit');
-      }
-      
-      const data = await response.json();
-      setCredits(data.credits);
-      return true;
-    } catch (error) {
-      console.error('Error using credit:', error);
-      return false;
-    }
-  }, [session]);
+  // Throttle the fetchCredits function to prevent too many API calls
+  const throttledFetchCredits = useCallback(
+    throttle(fetchCredits, 5000), // Only allow once every 5 seconds
+    [fetchCredits]
+  );
   
   // Load credits on session change
   useEffect(() => {
@@ -84,7 +65,7 @@ function UserCreditsProvider({ children }: { children: React.ReactNode }) {
   }, [session, fetchCredits]);
   
   return (
-    <UserCreditsContext.Provider value={{ credits, loading, fetchCredits, useCredit }}>
+    <UserCreditsContext.Provider value={{ credits, loading, fetchCredits: throttledFetchCredits }}>
       {children}
     </UserCreditsContext.Provider>
   );
@@ -92,10 +73,10 @@ function UserCreditsProvider({ children }: { children: React.ReactNode }) {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
-      <UserCreditsProvider>
-        {children}
-      </UserCreditsProvider>
-    </SessionProvider>
+      <SessionProvider>
+        <UserCreditsProvider>
+          {children}
+        </UserCreditsProvider>
+      </SessionProvider>
   )
 }
