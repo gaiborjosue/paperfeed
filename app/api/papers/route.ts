@@ -32,14 +32,52 @@ async function handleRequest(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Fetch and parse RSS feed
+    // Construct URL - this will determine if we use RSS or API based on weekday
     const feedUrl = ArxivService.buildFeedUrl(searchParams.categories);
     const feedContent = await ArxivService.fetchFeed(feedUrl);
-    const parsedFeed = await parseStringPromise(feedContent);
-
-    // Process results
-    const items = parsedFeed.rss.channel[0].item || [];
-    const papers: Paper[] = items.map((item: unknown) => ArxivService.parsePaper(item));
+    
+    // Check if we're using the API URL (for weekends) or RSS feed
+    const isApiQuery = feedUrl.includes('export.arxiv.org/api/query');
+    let papers: Paper[] = [];
+    
+    if (isApiQuery) {
+      // Parse API response (XML format)
+      const parsedData = await parseStringPromise(feedContent);
+      
+      // Extract papers from API response
+      const entries = parsedData?.feed?.entry || [];
+      papers = entries.map((entry: any) => {
+        // Extract categories
+        const categories = entry.category?.map((cat: any) => cat.$.term) || [];
+        
+        // Extract authors
+        const authors = entry.author?.map((author: any) => author.name[0]) || [];
+        
+        // Extract link
+        let link = '';
+        if (Array.isArray(entry.link)) {
+          const pdfLink = entry.link.find((l: any) => l.$.title === 'pdf');
+          const absLink = entry.link.find((l: any) => l.$.rel === 'alternate');
+          link = (absLink || pdfLink || entry.link[0])?.$.href || '';
+        }
+        
+        return {
+          title: entry.title ? entry.title[0] : '',
+          link: link,
+          abstract: entry.summary ? entry.summary[0] : '',
+          authors: authors,
+          categories: categories,
+          publishDate: entry.published ? entry.published[0] : '',
+          announceType: 'new',  // Default for API responses
+          guid: entry.id ? entry.id[0] : null
+        };
+      });
+    } else {
+      // Parse regular RSS feed
+      const parsedFeed = await parseStringPromise(feedContent);
+      const items = parsedFeed.rss.channel[0].item || [];
+      papers = items.map((item: unknown) => ArxivService.parsePaper(item));
+    }
     
     // Filter by keywords and limit results
     const matchedPapers = papers

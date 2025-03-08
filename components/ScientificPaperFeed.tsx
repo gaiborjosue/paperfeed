@@ -2,8 +2,8 @@
 
 // components/ScientificPaperFeed.tsx
 import { useState, useEffect } from "react"
-import { Loader2, LayoutGrid, Square, Menu } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, LayoutGrid, Square, Menu, InfoIcon } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { PaperFilters } from "./PaperFilters"
 import { PaperCard } from "./PaperCard"
 import { cn } from "@/lib/utils"
@@ -42,13 +42,19 @@ export default function ScientificPaperFeed() {
   const [error, setError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
+  const [isWeekend, setIsWeekend] = useState(false)
 
-  // Initialize view mode from localStorage
+  // Initialize view mode from localStorage and check if it's a weekend
   useEffect(() => {
     const savedViewMode = localStorage.getItem('paperfeed-view-mode') as ViewMode
     if (savedViewMode === "grid" || savedViewMode === "list") {
       setViewMode(savedViewMode)
     }
+    
+    // Check if today is a weekend
+    const today = new Date()
+    const dayOfWeek = today.getDay() // 0 = Sunday, 6 = Saturday
+    setIsWeekend(dayOfWeek === 0 || dayOfWeek === 6)
   }, [])
 
   const handleSearch = async (filters: {
@@ -165,6 +171,22 @@ export default function ScientificPaperFeed() {
     </div>
   )
 
+  // Weekend notification banner
+  const WeekendNotification = () => {
+    if (!isWeekend) return null;
+    
+    return (
+      <Alert className="mb-6 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50">
+        <InfoIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <AlertTitle className="text-blue-600 dark:text-blue-400">Weekend Mode</AlertTitle>
+        <AlertDescription className="text-blue-600/90 dark:text-blue-400/90">
+          Since arXiv doesn't publish papers on weekends, we're showing papers from this past week. 
+          Daily updates will resume on Monday.
+        </AlertDescription>
+      </Alert>
+    );
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 relative pt-32">
       <div className="mb-8">
@@ -181,6 +203,9 @@ export default function ScientificPaperFeed() {
         
         <PaperFilters onSearch={handleSearch} />
       </div>
+
+      {/* Show weekend notification if it's a weekend */}
+      <WeekendNotification />
 
       {loading && (
         <div className="flex justify-center items-center min-h-[200px]">

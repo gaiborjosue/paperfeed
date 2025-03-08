@@ -1,23 +1,97 @@
 import { Paper } from "@/types";
 import { parseStringPromise } from 'xml2js';
 
+interface CacheItem {
+  data: string;
+  timestamp: number;
+}
+
 export class ArxivService {
   private static readonly BASE_URL = 'https://rss.arxiv.org/rss/';
-  private static readonly API_URL = 'https://export.arxiv.org/api/query';
+  static readonly API_URL = 'https://export.arxiv.org/api/query';
+  private static readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  private static cache: Record<string, CacheItem> = {};
 
   static buildFeedUrl(categories: string[]): string {
     if (!categories.length) {
       throw new Error('At least one category is required');
     }
+    
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
+    
+    // If today is a weekend (Saturday or Sunday), use the API query with date range
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return this.buildWeekendQueryUrl(categories);
+    }
+    
+    // Otherwise use the RSS feed
     return `${this.BASE_URL}${categories.join('+')}`;
+  }
+  
+  /**
+   * Builds a URL for the arXiv API with date range for weekend queries
+   * This gets papers from the previous Monday-Friday
+   */
+  private static buildWeekendQueryUrl(categories: string[]): string {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
+    
+    // Calculate the date range for the previous week's Monday to Friday
+    let mondayDate = new Date(today);
+    if (dayOfWeek === 0) { // Sunday
+      mondayDate.setDate(today.getDate() - 6); // Last Monday
+    } else if (dayOfWeek === 6) { // Saturday
+      mondayDate.setDate(today.getDate() - 5); // Last Monday
+    }
+    
+    let fridayDate = new Date(mondayDate);
+    fridayDate.setDate(mondayDate.getDate() + 4); // Friday of the same week
+    
+    // Format dates as YYYYMMDD0600 (using 06:00 GMT as the time for consistency)
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}${month}${day}0600`;
+    };
+    
+    const mondayFormatted = formatDate(mondayDate);
+    const fridayFormatted = formatDate(fridayDate);
+    
+    // Build categories part of the query (cat:cs.AI+OR+cat:cs.CV etc.)
+    const categoriesQuery = categories.map(cat => `cat:${cat}`).join('+OR+');
+    
+    // Build the full API query URL with date range
+    return `${this.API_URL}?search_query=(${categoriesQuery})+AND+submittedDate:[${mondayFormatted}+TO+${fridayFormatted}2359]&start=0&max_results=1000`;
   }
 
   static async fetchFeed(url: string): Promise<string> {
+    // Check if we have a valid cached response
+    const cachedItem = this.cache[url];
+    const now = Date.now();
+    
+    if (cachedItem && (now - cachedItem.timestamp) < this.CACHE_TTL) {
+      console.log('Using cached arXiv data for:', url);
+      return cachedItem.data;
+    }
+
+    // Fetch fresh data if no cache or cache expired
+    console.log('Fetching fresh arXiv data for:', url);
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch feed: ${response.statusText}`);
     }
-    return response.text();
+    
+    const data = await response.text();
+    
+    // Update cache
+    this.cache[url] = {
+      data,
+      timestamp: now
+    };
+    
+    return data;
   }
 
   static parsePaper(item: any): Paper {
@@ -50,6 +124,16 @@ export class ArxivService {
    * @returns The paper abstract or null if not found
    */
   static async fetchPaperById(arxivId: string): Promise<string | null> {
+    // Check cache for this specific paper ID
+    const cacheKey = `paper_${arxivId}`;
+    const cachedItem = this.cache[cacheKey];
+    const now = Date.now();
+    
+    if (cachedItem && (now - cachedItem.timestamp) < this.CACHE_TTL) {
+      console.log('Using cached paper data for:', arxivId);
+      return cachedItem.data;
+    }
+    
     try {
       const url = `${this.API_URL}?id_list=${encodeURIComponent(arxivId)}`;
       const response = await fetch(url);
@@ -68,6 +152,15 @@ export class ArxivService {
       }
       
       const abstract = entry.summary?.[0]?.trim();
+      
+      // Cache the result
+      if (abstract) {
+        this.cache[cacheKey] = {
+          data: abstract,
+          timestamp: now
+        };
+      }
+      
       return abstract || null;
     } catch (error) {
       console.error('Error fetching paper details:', error);
