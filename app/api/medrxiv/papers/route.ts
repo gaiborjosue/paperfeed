@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseStringPromise } from 'xml2js';
 import { Paper, SearchParams, SearchResponse } from '@/types';
-import { BiorxivService } from '@/utils/biorxiv';
+import { MedrxivService } from '@/utils/medrxiv';
 import { adminSupabase } from '@/utils/supabase';
 
 export async function GET(req: NextRequest) {
@@ -36,8 +36,8 @@ async function handleRequest(req: NextRequest) {
     const selectedCategory = searchParams.category;
 
     // Fetch feed content (could be RSS or JSON based on if it's a weekend)
-    const feedUrl = BiorxivService.buildFeedUrl(selectedCategory);
-    const feedContent = await BiorxivService.fetchFeed(feedUrl);
+    const feedUrl = MedrxivService.buildFeedUrl(selectedCategory);
+    const feedContent = await MedrxivService.fetchFeed(feedUrl);
     
     // Check if it's a weekend (API returns JSON directly)
     const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
@@ -53,7 +53,7 @@ async function handleRequest(req: NextRequest) {
             // Only include papers that match the selected category
             item.category && item.category.toLowerCase() === selectedCategory.toLowerCase()
           )
-          .map((item: any) => BiorxivService.parseJsonPaper(item));
+          .map((item: any) => MedrxivService.parseJsonPaper(item));
       }
     } else {
       // Handle RSS feed response - this already filters by category through the URL
@@ -62,16 +62,16 @@ async function handleRequest(req: NextRequest) {
         
         // Process results
         const items = parsedFeed.rdf?.item || [];
-        papers = items.map((item: any) => BiorxivService.parsePaper(item));
+        papers = items.map((item: any) => MedrxivService.parsePaper(item));
       } catch (parseError) {
-        console.error('Error parsing bioRxiv XML:', parseError);
-        throw new Error('Error parsing bioRxiv feed. The feed format may have changed.');
+        console.error('Error parsing medRxiv XML:', parseError);
+        throw new Error('Error parsing medRxiv feed. The feed format may have changed.');
       }
     }
     
-    // Filter by keywords only - no limit for bioRxiv papers as requested
+    // Filter by keywords only - no limit for medRxiv papers as requested
     const matchedPapers = papers
-      .filter(paper => BiorxivService.matchesKeywords(paper, searchParams.keywords || []));
+      .filter(paper => MedrxivService.matchesKeywords(paper, searchParams.keywords || []));
 
     return NextResponse.json({
       papers: matchedPapers,
@@ -80,7 +80,7 @@ async function handleRequest(req: NextRequest) {
       errors: []
     });
   } catch (error) {
-    console.error('Error processing bioRxiv papers request:', error);
+    console.error('Error processing medRxiv papers request:', error);
     return NextResponse.json({
       papers: [],
       totalResults: 0,

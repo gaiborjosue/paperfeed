@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { ArxivService } from "@/utils/arxiv";
 import { BiorxivService } from "@/utils/biorxiv";
+import { MedrxivService } from "@/utils/medrxiv";
 import { supabase, adminSupabase } from "@/utils/supabase";
 
 export async function POST(req: Request) {
@@ -18,9 +19,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get arXiv ID or DOI from request
+    // Get paper identifier from request
     const requestBody = await req.json();
-    const { arxivId, doi } = requestBody;
+    const { arxivId, doi, source } = requestBody;
 
     if (!arxivId && !doi) {
       return Response.json({ error: "Missing paper identifier (arXiv ID or DOI)" }, { status: 400 });
@@ -53,9 +54,15 @@ export async function POST(req: Request) {
       // Fetch from arXiv
       abstract = await ArxivService.fetchPaperById(arxivId);
     } else if (doi) {
-      // Fetch from bioRxiv
-      const paper = await BiorxivService.fetchPaperByDoi(doi);
-      abstract = paper?.abstract || null;
+      // Source helps us determine where to fetch from if provided
+      if (source === 'medrxiv') {
+        const paper = await MedrxivService.fetchPaperByDoi(doi);
+        abstract = paper?.abstract || null;
+      } else {
+        // Default to bioRxiv if no source specified
+        const paper = await BiorxivService.fetchPaperByDoi(doi);
+        abstract = paper?.abstract || null;
+      }
     }
 
     if (!abstract) {

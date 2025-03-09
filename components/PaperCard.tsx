@@ -32,6 +32,7 @@ import { useUserCredits } from "@/app/providers";
 import { Paper } from "@/types"; // Import Paper type from types
 import { ArxivService } from "@/utils/arxiv";
 import { BiorxivService } from "@/utils/biorxiv";
+import { MedrxivService } from "@/utils/medrxiv";
 
 interface PaperCardProps {
   paper: Paper;
@@ -108,13 +109,16 @@ export function PaperCard({ paper }: PaperCardProps) {
       let requestBody: any = {};
       
       // Handle based on paper source
-      if (paper.source === 'biorxiv') {
-        // For bioRxiv papers, use the DOI
+      if (paper.source === 'biorxiv' || paper.source === 'medrxiv') {
+        // For bioRxiv/medRxiv papers, use the DOI
         if (paper.guid) {
           paperId = paper.guid;
-          requestBody = { doi: paperId };
+          requestBody = { 
+            doi: paperId,
+            source: paper.source // Send source to identify which service to use
+          };
         } else {
-          throw new Error('Could not find valid DOI for bioRxiv paper');
+          throw new Error(`Could not find valid DOI for ${paper.source} paper`);
         }
       } else {
         // For arXiv papers, extract the arXiv ID
@@ -184,6 +188,18 @@ export function PaperCard({ paper }: PaperCardProps) {
         {remainingCredits} Simplifications left
       </div>
     );
+  };
+  
+  // Get appropriate view link text based on source
+  const getViewLinkText = () => {
+    switch (paper.source) {
+      case 'biorxiv':
+        return 'View on bioRxiv';
+      case 'medrxiv':
+        return 'View on medRxiv';
+      default:
+        return 'View on arXiv';
+    }
   };
 
   const PaperCardContent = () => (
@@ -312,10 +328,7 @@ export function PaperCard({ paper }: PaperCardProps) {
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
-                  {paper.source === 'biorxiv' 
-                    ? 'View on bioRxiv'
-                    : 'View on arXiv'
-                  }
+                  {getViewLinkText()}
                 </Link>
               </Button>
             </div>

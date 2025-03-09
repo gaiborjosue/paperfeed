@@ -35,7 +35,7 @@ interface SearchResponse {
 }
 
 type ViewMode = "grid" | "list"
-type PaperSource = "arxiv" | "biorxiv"
+type PaperSource = "arxiv" | "biorxiv" | "medrxiv"
 
 export default function ScientificPaperFeed() {
   const [papers, setPapers] = useState<Paper[]>([])
@@ -85,9 +85,16 @@ export default function ScientificPaperFeed() {
           categories,
           keywords: filters.keywords,
         };
-      } else {
+      } else if (filters.source === "biorxiv") {
         // bioRxiv search
         url = '/api/biorxiv/papers';
+        requestBody = {
+          category: filters.category,
+          keywords: filters.keywords,
+        };
+      } else {
+        // medRxiv search
+        url = '/api/medrxiv/papers';
         requestBody = {
           category: filters.category,
           keywords: filters.keywords,
@@ -200,6 +207,8 @@ export default function ScientificPaperFeed() {
       description = "Since arXiv doesn't publish papers on weekends, we're showing papers from this past week. Daily updates will resume on Monday.";
     } else if (currentSource === "biorxiv") {
       description = "We're showing a compilation of bioRxiv papers from the past week. Daily updates will resume on Monday.";
+    } else if (currentSource === "medrxiv") {
+      description = "We're showing a compilation of medRxiv papers from the past week. Daily updates will resume on Monday.";
     } else {
       return null;
     }

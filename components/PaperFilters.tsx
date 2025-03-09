@@ -32,9 +32,11 @@ interface BiorxivCategory {
   label: string
 }
 
+type PaperSource = "arxiv" | "biorxiv" | "medrxiv";
+
 interface PaperFiltersProps {
   onSearch: (filters: {
-    source: "arxiv" | "biorxiv"
+    source: PaperSource
     category: string
     field?: string
     keywords: string[]
@@ -65,7 +67,7 @@ const CATEGORY_MAP: { [key: string]: string } = {
 
 export function PaperFilters({ onSearch }: PaperFiltersProps) {
   // Current active source
-  const [activeSource, setActiveSource] = useState<"arxiv" | "biorxiv">("arxiv")
+  const [activeSource, setActiveSource] = useState<PaperSource>("arxiv")
   
   // arXiv state
   const [selectedCategory, setSelectedCategory] = useState<string>("")
@@ -78,6 +80,11 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
   const [biorxivCategories, setBiorxivCategories] = useState<BiorxivCategory[]>([])
   const [selectedBiorxivCategory, setSelectedBiorxivCategory] = useState<string>("")
   const [isLoadingBioCategories, setIsLoadingBioCategories] = useState(false)
+  
+  // medRxiv state
+  const [medrxivCategories, setMedrxivCategories] = useState<BiorxivCategory[]>([])
+  const [selectedMedrxivCategory, setSelectedMedrxivCategory] = useState<string>("")
+  const [isLoadingMedCategories, setIsLoadingMedCategories] = useState(false)
   
   // Shared state
   const [keywords, setKeywords] = useState<string>("")
@@ -139,6 +146,29 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
     
     fetchBiorxivCategories()
   }, [])
+  
+  // Fetch medRxiv categories on component mount
+  useEffect(() => {
+    const fetchMedrxivCategories = async () => {
+      setIsLoadingMedCategories(true)
+      
+      try {
+        const response = await fetch('/api/medrxiv/categories')
+        const data = await response.json()
+        
+        if (data.categories && Array.isArray(data.categories)) {
+          setMedrxivCategories(data.categories)
+        }
+      } catch (error) {
+        console.error('Error fetching medRxiv categories:', error)
+        setMedrxivCategories([])
+      } finally {
+        setIsLoadingMedCategories(false)
+      }
+    }
+    
+    fetchMedrxivCategories()
+  }, [])
 
   const handleSearch = () => {
     if (activeSource === "arxiv") {
@@ -147,7 +177,7 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
 
       const categoryCode = CATEGORY_MAP[selectedCategory];
       const searchParams = {
-        source: "arxiv" as const,
+        source: "arxiv" as PaperSource,
         category: categoryCode,
         keywords: keywords.split(',').map(k => k.trim()).filter(Boolean)
       };
@@ -157,13 +187,22 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
       } else {
         onSearch(searchParams);
       }
-    } else {
+    } else if (activeSource === "biorxiv") {
       // Handle bioRxiv search
       if (!selectedBiorxivCategory) return;
       
       onSearch({
         source: "biorxiv",
         category: selectedBiorxivCategory,
+        keywords: keywords.split(',').map(k => k.trim()).filter(Boolean)
+      });
+    } else {
+      // Handle medRxiv search
+      if (!selectedMedrxivCategory) return;
+      
+      onSearch({
+        source: "medrxiv",
+        category: selectedMedrxivCategory,
         keywords: keywords.split(',').map(k => k.trim()).filter(Boolean)
       });
     }
@@ -174,13 +213,14 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
       <Tabs 
         defaultValue="arxiv" 
         value={activeSource}
-        onValueChange={(value) => setActiveSource(value as "arxiv" | "biorxiv")}
+        onValueChange={(value) => setActiveSource(value as PaperSource)}
         className="w-full"
       >
         <div className="flex justify-center mb-4">
-          <TabsList className="grid w-[400px] max-w-full grid-cols-2">
+          <TabsList className="grid w-[600px] max-w-full grid-cols-3">
             <TabsTrigger value="arxiv">arXiv</TabsTrigger>
             <TabsTrigger value="biorxiv">bioRxiv</TabsTrigger>
+            <TabsTrigger value="medrxiv">medRxiv</TabsTrigger>
           </TabsList>
         </div>
         
@@ -299,6 +339,46 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
             </div>
           </div>
         </TabsContent>
+        
+        <TabsContent value="medrxiv" className="mt-0">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+            {/* medRxiv Category Selector */}
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select
+                value={selectedMedrxivCategory}
+                onValueChange={setSelectedMedrxivCategory}
+                disabled={isLoadingMedCategories}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={isLoadingMedCategories ? "Loading categories..." : "Select category"} />
+                </SelectTrigger>
+                <SelectContent position="popper" className="max-h-[40vh] overflow-y-auto">
+                  <SelectGroup>
+                    {medrxivCategories.map((category) => (
+                      <SelectItem 
+                        key={category.value} 
+                        value={category.value}
+                      >
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Keywords Input */}
+            <div className="space-y-2">
+              <Label>Keywords (comma-separated)</Label>
+              <Input
+                placeholder="e.g., COVID-19, vaccine, clinical trial"
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+              />
+            </div>
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* Search Button */}
@@ -306,12 +386,13 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
         className="w-full md:px-8 mt-4"
         disabled={
           (activeSource === "arxiv" && (!selectedCategory || (hasSubfields && !selectedField))) ||
-          (activeSource === "biorxiv" && !selectedBiorxivCategory)
+          (activeSource === "biorxiv" && !selectedBiorxivCategory) ||
+          (activeSource === "medrxiv" && !selectedMedrxivCategory)
         }
         onClick={handleSearch}
       >
         <Search className="mr-2 h-4 w-4" />
-        Search {activeSource === "arxiv" ? "arXiv" : "bioRxiv"} Papers
+        Search {activeSource === "arxiv" ? "arXiv" : activeSource === "biorxiv" ? "bioRxiv" : "medRxiv"} Papers
       </Button>
     </div>
   )
