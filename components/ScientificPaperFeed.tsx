@@ -35,6 +35,7 @@ interface SearchResponse {
 }
 
 type ViewMode = "grid" | "list"
+type PaperSource = "arxiv" | "biorxiv"
 
 export default function ScientificPaperFeed() {
   const [papers, setPapers] = useState<Paper[]>([])
@@ -43,6 +44,7 @@ export default function ScientificPaperFeed() {
   const [hasSearched, setHasSearched] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
   const [isWeekend, setIsWeekend] = useState(false)
+  const [currentSource, setCurrentSource] = useState<PaperSource>("arxiv")
 
   // Initialize view mode from localStorage and check if it's a weekend
   useEffect(() => {
@@ -58,30 +60,46 @@ export default function ScientificPaperFeed() {
   }, [])
 
   const handleSearch = async (filters: {
+    source: PaperSource
     category: string
-    field?: string  // Made optional
+    field?: string
     keywords: string[]
   }) => {
     try {
       setLoading(true)
       setError(null)
       setHasSearched(true)
+      setCurrentSource(filters.source)
       
-      // Construct categories array based on whether field is present
-      const categories = filters.field 
-        ? [`${filters.category}.${filters.field}`]
-        : [filters.category];
+      let url: string;
+      let requestBody: any;
+      
+      if (filters.source === "arxiv") {
+        // Construct categories array based on whether field is present
+        const categories = filters.field 
+          ? [`${filters.category}.${filters.field}`]
+          : [filters.category];
+          
+        url = '/api/papers';
+        requestBody = {
+          categories,
+          keywords: filters.keywords,
+        };
+      } else {
+        // bioRxiv search
+        url = '/api/biorxiv/papers';
+        requestBody = {
+          category: filters.category,
+          keywords: filters.keywords,
+        };
+      }
 
-      const response = await fetch('/api/papers', {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          categories,
-          keywords: filters.keywords,
-          // limit: 200
-        })
+        body: JSON.stringify(requestBody)
       })
 
       const data: SearchResponse = await response.json()
@@ -175,13 +193,23 @@ export default function ScientificPaperFeed() {
   const WeekendNotification = () => {
     if (!isWeekend) return null;
     
+    let title = "Weekend Mode";
+    let description = "";
+    
+    if (currentSource === "arxiv") {
+      description = "Since arXiv doesn't publish papers on weekends, we're showing papers from this past week. Daily updates will resume on Monday.";
+    } else if (currentSource === "biorxiv") {
+      description = "We're showing a compilation of bioRxiv papers from the past week. Daily updates will resume on Monday.";
+    } else {
+      return null;
+    }
+    
     return (
       <Alert className="mb-6 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50">
         <InfoIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-        <AlertTitle className="text-blue-600 dark:text-blue-400">Weekend Mode</AlertTitle>
+        <AlertTitle className="text-blue-600 dark:text-blue-400">{title}</AlertTitle>
         <AlertDescription className="text-blue-600/90 dark:text-blue-400/90">
-          Since arXiv doesn't publish papers on weekends, we're showing papers from this past week. 
-          Daily updates will resume on Monday.
+          {description}
         </AlertDescription>
       </Alert>
     );
@@ -238,7 +266,7 @@ export default function ScientificPaperFeed() {
 
       {!loading && !error && !hasSearched && (
         <div className="text-center text-muted-foreground py-12">
-          Select a category and field to start searching for papers.
+          Select a source and category to start searching for papers.
         </div>
       )}
     </div>

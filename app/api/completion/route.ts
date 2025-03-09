@@ -3,6 +3,7 @@ import { openai } from "@ai-sdk/openai";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { ArxivService } from "@/utils/arxiv";
+import { BiorxivService } from "@/utils/biorxiv";
 import { supabase, adminSupabase } from "@/utils/supabase";
 
 export async function POST(req: Request) {
@@ -17,11 +18,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get arXiv ID from request
-    const { arxivId } = await req.json();
+    // Get arXiv ID or DOI from request
+    const requestBody = await req.json();
+    const { arxivId, doi } = requestBody;
 
-    if (!arxivId) {
-      return Response.json({ error: "Missing arXiv ID" }, { status: 400 });
+    if (!arxivId && !doi) {
+      return Response.json({ error: "Missing paper identifier (arXiv ID or DOI)" }, { status: 400 });
     }
 
     // Check and use credits directly in this endpoint
@@ -44,8 +46,17 @@ export async function POST(req: Request) {
       return Response.json({ error: "No credits remaining" }, { status: 403 });
     }
 
-    // Fetch the paper abstract directly from arXiv API using the ID
-    const abstract = await ArxivService.fetchPaperById(arxivId);
+    // Fetch the paper abstract based on source
+    let abstract: string | null = null;
+    
+    if (arxivId) {
+      // Fetch from arXiv
+      abstract = await ArxivService.fetchPaperById(arxivId);
+    } else if (doi) {
+      // Fetch from bioRxiv
+      const paper = await BiorxivService.fetchPaperByDoi(doi);
+      abstract = paper?.abstract || null;
+    }
 
     if (!abstract) {
       return Response.json(

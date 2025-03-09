@@ -63,7 +63,7 @@ export class ArxivService {
     const categoriesQuery = categories.map(cat => `cat:${cat}`).join('+OR+');
     
     // Build the full API query URL with date range
-    return `${this.API_URL}?search_query=(${categoriesQuery})+AND+submittedDate:[${mondayFormatted}+TO+${fridayFormatted}2359]&start=0&max_results=1000`;
+    return `${this.API_URL}?search_query=(${categoriesQuery})+AND+submittedDate:[${mondayFormatted}+TO+${fridayFormatted}2359]&start=0&max_results=50`;
   }
 
   static async fetchFeed(url: string): Promise<string> {
@@ -105,7 +105,8 @@ export class ArxivService {
       categories: Array.isArray(item.category) ? item.category : [item.category],
       publishDate: item.pubDate[0],
       announceType: item['arxiv:announce_type']?.[0] || 'unknown',
-      guid: item.guid?.[0]?._?.trim() || item.guid?.[0] || null // Extract guid if available
+      guid: item.guid?.[0]?._?.trim() || item.guid?.[0] || null, // Extract guid if available
+      source: 'arxiv'
     };
   }
 

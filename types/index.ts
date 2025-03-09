@@ -6,11 +6,18 @@ export interface Paper {
   categories: string[];
   publishDate: string;
   announceType: string;
-  guid?: string; // Optional GUID from arXiv
+  guid?: string; // Optional GUID from arXiv or DOI from bioRxiv
+  source?: 'arxiv' | 'biorxiv'; // Source of the paper
 }
 
 export interface SearchParams {
   categories: string[];
+  keywords: string[];
+  limit?: number;
+}
+
+export interface BiorxivSearchParams {
+  category: string;
   keywords: string[];
   limit?: number;
 }
@@ -26,4 +33,9 @@ export interface Category {
   category: string;
   field: string;
   description: string;
+}
+
+export interface BiorxivCategory {
+  value: string; // ID used in API calls (with underscores)
+  label: string; // Human-readable name
 }

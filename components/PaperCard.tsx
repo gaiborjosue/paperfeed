@@ -31,6 +31,7 @@ import { useSession } from "next-auth/react";
 import { useUserCredits } from "@/app/providers";
 import { Paper } from "@/types"; // Import Paper type from types
 import { ArxivService } from "@/utils/arxiv";
+import { BiorxivService } from "@/utils/biorxiv";
 
 interface PaperCardProps {
   paper: Paper;
@@ -103,31 +104,43 @@ export function PaperCard({ paper }: PaperCardProps) {
     setErrorMessage(null);
 
     try {
-      // Extract the arXiv ID from the GUID or paper link
-      let arxivId = "";
+      let paperId = "";
+      let requestBody: any = {};
       
-      if (paper.guid) {
-        arxivId = ArxivService.extractArxivId(paper.guid) || "";
-      }
-      
-      // If no valid GUID found, extract from the paper link as fallback
-      if (!arxivId && paper.link) {
-        arxivId = ArxivService.extractArxivId(paper.link) || "";
-      }
-      
-      if (!arxivId) {
-        throw new Error('Could not extract valid arXiv ID');
+      // Handle based on paper source
+      if (paper.source === 'biorxiv') {
+        // For bioRxiv papers, use the DOI
+        if (paper.guid) {
+          paperId = paper.guid;
+          requestBody = { doi: paperId };
+        } else {
+          throw new Error('Could not find valid DOI for bioRxiv paper');
+        }
+      } else {
+        // For arXiv papers, extract the arXiv ID
+        if (paper.guid) {
+          paperId = ArxivService.extractArxivId(paper.guid) || "";
+        }
+        
+        // If no valid GUID found, extract from the paper link as fallback
+        if (!paperId && paper.link) {
+          paperId = ArxivService.extractArxivId(paper.link) || "";
+        }
+        
+        if (!paperId) {
+          throw new Error('Could not extract valid arXiv ID');
+        }
+        
+        requestBody = { arxivId: paperId };
       }
 
-      // Send request directly to the completion endpoint which now handles credit checking
+      // Send request to the completion endpoint which handles credit checking
       const response = await fetch('/api/completion', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          arxivId: arxivId
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -299,7 +312,10 @@ export function PaperCard({ paper }: PaperCardProps) {
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
-                  View on arXiv
+                  {paper.source === 'biorxiv' 
+                    ? 'View on bioRxiv'
+                    : 'View on arXiv'
+                  }
                 </Link>
               </Button>
             </div>
