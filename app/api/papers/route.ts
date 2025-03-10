@@ -19,7 +19,7 @@ async function handleRequest(req: NextRequest) {
       : {
           categories: (req.nextUrl.searchParams.get('categories') || '').split(',').filter(Boolean),
           keywords: (req.nextUrl.searchParams.get('keywords') || '').split(',').filter(Boolean),
-          limit: parseInt(req.nextUrl.searchParams.get('limit') || '50')
+          limit: parseInt(req.nextUrl.searchParams.get('limit') || '1000')
         };
 
     // Validate parameters

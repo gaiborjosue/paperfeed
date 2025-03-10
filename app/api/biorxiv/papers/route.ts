@@ -35,38 +35,26 @@ async function handleRequest(req: NextRequest) {
 
     const selectedCategory = searchParams.category;
 
-    // Fetch feed content (could be RSS or JSON based on if it's a weekend)
+    // Fetch feed content (always RSS feed now)
     const feedUrl = BiorxivService.buildFeedUrl(selectedCategory);
     const feedContent = await BiorxivService.fetchFeed(feedUrl);
     
-    // Check if it's a weekend (API returns JSON directly)
-    const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
     let papers: Paper[] = [];
     
-    if (isWeekend) {
-      // Handle JSON response (from date range API)
-      if (feedContent.collection && Array.isArray(feedContent.collection)) {
-        // For weekend API responses, we need to filter by category since the API
-        // doesn't support filtering by category directly
-        papers = feedContent.collection
-          .filter((item: any) => 
-            // Only include papers that match the selected category
-            item.category && item.category.toLowerCase() === selectedCategory.toLowerCase()
-          )
-          .map((item: any) => BiorxivService.parseJsonPaper(item));
-      }
-    } else {
-      // Handle RSS feed response - this already filters by category through the URL
-      try {
-        const parsedFeed = await parseStringPromise(feedContent);
-        
-        // Process results
-        const items = parsedFeed.rdf?.item || [];
-        papers = items.map((item: any) => BiorxivService.parsePaper(item));
-      } catch (parseError) {
-        console.error('Error parsing bioRxiv XML:', parseError);
-        throw new Error('Error parsing bioRxiv feed. The feed format may have changed.');
-      }
+    // Handle RSS feed response - this already filters by category through the URL
+    try {
+      const parsedFeed = await parseStringPromise(feedContent);
+      
+      console.log('Parsed feed structure:', JSON.stringify(parsedFeed, null, 2).substring(0, 500) + '...');
+      
+      // Process results - check for the right structure format from the feed
+      const items = parsedFeed['rdf:RDF']?.item || [];
+      console.log(`Found ${items.length} items in the RSS feed`);
+      
+      papers = items.map((item: any) => BiorxivService.parsePaper(item));
+    } catch (parseError) {
+      console.error('Error parsing bioRxiv XML:', parseError);
+      throw new Error('Error parsing bioRxiv feed. The feed format may have changed.');
     }
     
     // Filter by keywords only - no limit for bioRxiv papers as requested

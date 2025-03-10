@@ -196,29 +196,17 @@ export default function ScientificPaperFeed() {
     </div>
   )
 
-  // Weekend notification banner
+  // Weekend notification banner - only show for arXiv since we always use RSS feed for bioRxiv and medRxiv
   const WeekendNotification = () => {
-    if (!isWeekend) return null;
-    
-    let title = "Weekend Mode";
-    let description = "";
-    
-    if (currentSource === "arxiv") {
-      description = "Since arXiv doesn't publish papers on weekends, we're showing papers from this past week. Daily updates will resume on Monday.";
-    } else if (currentSource === "biorxiv") {
-      description = "We're showing a compilation of bioRxiv papers from the past week. Daily updates will resume on Monday.";
-    } else if (currentSource === "medrxiv") {
-      description = "We're showing a compilation of medRxiv papers from the past week. Daily updates will resume on Monday.";
-    } else {
-      return null;
-    }
+    // Only show weekend notification if it's a weekend AND the source is arXiv
+    if (!isWeekend || currentSource !== "arxiv") return null;
     
     return (
       <Alert className="mb-6 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50">
         <InfoIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-        <AlertTitle className="text-blue-600 dark:text-blue-400">{title}</AlertTitle>
+        <AlertTitle className="text-blue-600 dark:text-blue-400">Weekend Mode</AlertTitle>
         <AlertDescription className="text-blue-600/90 dark:text-blue-400/90">
-          {description}
+          Since arXiv doesn't publish papers on weekends, we're showing papers from this past week. Daily updates will resume on Monday.
         </AlertDescription>
       </Alert>
     );

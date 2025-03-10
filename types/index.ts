@@ -8,6 +8,7 @@ export interface Paper {
   announceType: string;
   guid?: string; // Optional GUID from arXiv or DOI from bioRxiv
   source?: 'arxiv' | 'biorxiv' | 'medrxiv'; // Source of the paper
+  publisher?: string; // Optional publisher information from RSS feed
 }
 
 export interface SearchParams {
