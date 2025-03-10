@@ -7,7 +7,7 @@ export interface Paper {
   publishDate: string;
   announceType: string;
   guid?: string; // Optional GUID from arXiv or DOI from bioRxiv
-  source?: 'arxiv' | 'biorxiv'; // Source of the paper
+  source?: 'arxiv' | 'biorxiv' | 'medrxiv'; // Source of the paper
 }
 
 export interface SearchParams {
