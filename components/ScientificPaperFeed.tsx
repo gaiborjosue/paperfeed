@@ -2,12 +2,14 @@
 
 // components/ScientificPaperFeed.tsx
 import { useState, useEffect } from "react"
-import { Loader2, LayoutGrid, Square, Menu, InfoIcon } from "lucide-react"
+import { Loader2, LayoutGrid, Square, Menu, InfoIcon, List } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { PaperFilters } from "./PaperFilters"
 import { PaperCard } from "./PaperCard"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   DropdownMenu,
@@ -132,42 +134,17 @@ export default function ScientificPaperFeed() {
 
   // Desktop view controls
   const DesktopViewControls = () => (
-    <div className="hidden md:flex items-center space-x-2">
-      <span className="text-sm text-gray-400">View:</span>
-      <div className="border rounded-md p-1 space-x-1 flex">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className={cn("h-8 w-8", viewMode === "grid" && "bg-muted")}
-              onClick={() => toggleViewMode("grid")}
-            >
-              <LayoutGrid size={16} />
-              <span className="sr-only">Grid View</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Grid View</p>
-          </TooltipContent>
-        </Tooltip>
-        
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className={cn("h-8 w-8", viewMode === "list" && "bg-muted")}
-              onClick={() => toggleViewMode("list")}
-            >
-              <Square size={16} />
-              <span className="sr-only">List View</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>List View</p>
-          </TooltipContent>
-        </Tooltip>
+    <div className="hidden md:flex items-center space-x-3">
+      <div className="flex items-center space-x-2">
+        <Switch 
+          id="list-view-toggle" 
+          checked={viewMode === "list"}
+          onCheckedChange={(checked: any) => toggleViewMode(checked ? "list" : "grid")}
+        />
+        <Label htmlFor="list-view-toggle" className="text-sm cursor-pointer flex items-center">
+          <List size={16} className="mr-1.5" />
+          List View
+        </Label>
       </div>
     </div>
   )
@@ -188,7 +165,7 @@ export default function ScientificPaperFeed() {
             Grid
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => toggleViewMode("list")} className={viewMode === "list" ? "bg-muted" : ""}>
-            <Square className="h-4 w-4 mr-2" />
+            <List className="h-4 w-4 mr-2" />
             List
           </DropdownMenuItem>
         </DropdownMenuContent>
