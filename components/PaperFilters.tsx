@@ -218,9 +218,9 @@ export function PaperFilters({ onSearch }: PaperFiltersProps) {
       >
         <div className="flex justify-center mb-4">
           <TabsList className="grid w-[600px] max-w-full grid-cols-3">
-            <TabsTrigger value="arxiv">arXiv</TabsTrigger>
-            <TabsTrigger value="biorxiv">bioRxiv</TabsTrigger>
-            <TabsTrigger value="medrxiv">medRxiv</TabsTrigger>
+            <TabsTrigger value="arxiv">Engineering</TabsTrigger>
+            <TabsTrigger value="biorxiv">Biology</TabsTrigger>
+            <TabsTrigger value="medrxiv">Medicine</TabsTrigger>
           </TabsList>
         </div>
         
